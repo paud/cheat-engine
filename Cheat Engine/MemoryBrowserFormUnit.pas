@@ -44,7 +44,7 @@ type
     MenuItem11: TMenuItem;
     MenuItem12: TMenuItem;
     MenuItem13: TMenuItem;
-    MenuItem14: TMenuItem;
+    miUltimap: TMenuItem;
     MenuItem15: TMenuItem;
     MenuItem16: TMenuItem;
     MenuItem17: TMenuItem;
@@ -59,10 +59,21 @@ type
     MenuItem23: TMenuItem;
     MenuItem24: TMenuItem;
     MenuItem25: TMenuItem;
-    MenuItem26: TMenuItem;
+    miUltimap2: TMenuItem;
     MenuItem27: TMenuItem;
     MenuItem28: TMenuItem;
     MenuItem29: TMenuItem;
+    miCodeFilter: TMenuItem;
+    miExceptionIgnoreList: TMenuItem;
+    N19: TMenuItem;
+    miUnexpectedExceptionBreakNever: TMenuItem;
+    miUnexpectedExceptionBreakAlways: TMenuItem;
+    miUnexpectedExceptionBreakIfInRegion: TMenuItem;
+    miExceptionRegionSeperator: TMenuItem;
+    miExceptionRegionManageList: TMenuItem;
+    miExceptionRegionAutoAddAllocs: TMenuItem;
+    miBreakOnExceptions: TMenuItem;
+    miRunUnhandled: TMenuItem;
     miChangeProtectionRWE: TMenuItem;
     miChangeProtectionRE: TMenuItem;
     miChangeProtectionRW: TMenuItem;
@@ -280,6 +291,7 @@ type
     stacktrace2: TMenuItem;
     miDebugExecuteTillReturn: TMenuItem;
     zflabel: TLabel;
+    procedure Debug1Click(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure GotoBookmarkClick(Sender: TObject);
     procedure Makepagewritable1Click(Sender: TObject);
@@ -287,24 +299,31 @@ type
     procedure MenuItem10Click(Sender: TObject);
     procedure MenuItem11Click(Sender: TObject);
     procedure MenuItem12Click(Sender: TObject);
-    procedure MenuItem14Click(Sender: TObject);
+    procedure miCodeFilterClick(Sender: TObject);
+    procedure miUltimapClick(Sender: TObject);
     procedure MenuItem17Click(Sender: TObject);
     procedure MenuItem18Click(Sender: TObject);
     procedure MenuItem20Click(Sender: TObject);
     procedure MenuItem22Click(Sender: TObject);
     procedure MenuItem25Click(Sender: TObject);
-    procedure MenuItem26Click(Sender: TObject);
+    procedure miUltimap2Click(Sender: TObject);
     procedure MenuItem27Click(Sender: TObject);
     procedure MenuItem29Click(Sender: TObject);
     procedure miAddRefClick(Sender: TObject);
+    procedure miBreakOnExceptionsClick(Sender: TObject);
     procedure miChangeProtectionClick(Sender: TObject);
+    procedure miExceptionIgnoreListClick(Sender: TObject);
+    procedure miExceptionRegionAutoAddAllocsClick(Sender: TObject);
+    procedure miExceptionRegionManageListClick(Sender: TObject);
     procedure miHVBackClick(Sender: TObject);
     procedure miHVFollowClick(Sender: TObject);
     procedure miDebugSetAddressClick(Sender: TObject);
     procedure miGNUAssemblerClick(Sender: TObject);
     procedure miBinutilsSelectClick(Sender: TObject);
+    procedure miRunUnhandledClick(Sender: TObject);
     procedure miShowRelativeClick(Sender: TObject);
     procedure miSVCopyClick(Sender: TObject);
+    procedure miUnexpectedExceptionBreakOptionClick(Sender: TObject);
     procedure pmStacktracePopup(Sender: TObject);
     procedure SetBookmarkClick(Sender: TObject);
     procedure miTextEncodingClick(Sender: TObject);
@@ -568,7 +587,7 @@ type
     procedure reloadStacktrace;
     function GetReturnaddress: ptrUint;
 
-    procedure UpdateDebugContext(threadhandle: THandle; threadid: dword; changeSelection: boolean=true);
+    procedure UpdateDebugContext(threadhandle: THandle; threadid: dword; changeSelection: boolean=true; _debuggerthread: TDebuggerthread=nil);
     procedure miLockOnClick(Sender: TObject);
     procedure miLockMemviewClick(sender: TObject);
 
@@ -613,7 +632,8 @@ uses Valuechange, MainUnit, debugeventhandler, findwindowunit,
   frmStringMapUnit, frmStringpointerscanUnit, frmFilePatcherUnit,
   frmUltimapUnit, frmUltimap2Unit, frmAssemblyScanUnit, MemoryQuery,
   AccessedMemory, Parsers, GnuAssembler, frmEditHistoryUnit, frmWatchlistUnit,
-  vmxfunctions, frmstructurecompareunit, globals;
+  vmxfunctions, frmstructurecompareunit, globals, UnexpectedExceptionsHelper,
+  frmExceptionRegionListUnit, frmExceptionIgnoreListUnit, frmcodefilterunit;
 
 
 resourcestring
@@ -680,6 +700,7 @@ resourcestring
   rsMBBookmark2 = 'Bookmark %d: %s';
   rsMBCreationOfTheRemoteThreadFailed = 'Creation of the remote thread failed';
   rsMBThreadCreated = 'Thread Created';
+  rsBecauseOfUnhandledExeption = 'Because of unhandled exception %s';
 
 //property functions:
 function TMemoryBrowser.getShowValues: boolean;
@@ -996,7 +1017,15 @@ begin
   f.free;
 end;
 
-procedure TMemoryBrowser.MenuItem14Click(Sender: TObject);
+procedure TMemoryBrowser.miCodeFilterClick(Sender: TObject);
+begin
+  if frmcodefilter=nil then
+    frmcodefilter:=tfrmcodefilter.create(application);
+
+  frmcodefilter.show;
+end;
+
+procedure TMemoryBrowser.miUltimapClick(Sender: TObject);
 begin
   if frmUltimap=nil then
     frmUltimap:=TfrmUltimap.create(application);
@@ -1051,7 +1080,7 @@ begin
 
 end;
 
-procedure TMemoryBrowser.MenuItem26Click(Sender: TObject);
+procedure TMemoryBrowser.miUltimap2Click(Sender: TObject);
 begin
   if frmUltimap2=nil then
     frmUltimap2:=TfrmUltimap2.create(application);
@@ -1117,6 +1146,15 @@ begin
   end;
 end;
 
+procedure TMemoryBrowser.miRunUnhandledClick(Sender: TObject);
+begin
+  if debuggerthread<>nil then
+    debuggerthread.continueDebugging(co_run, 0, false);
+
+
+  caption:=rsMemoryViewerRunning;
+end;
+
 procedure TMemoryBrowser.miShowRelativeClick(Sender: TObject);
 begin
   if miShowRelative.checked then
@@ -1169,6 +1207,15 @@ begin
 
 end;
 
+procedure TMemoryBrowser.miUnexpectedExceptionBreakOptionClick(Sender: TObject);
+begin
+  case TMenuItem(Sender).tag of
+    0: UnexpectedExceptionAction:=ueaIgnore;
+    1: UnexpectedExceptionAction:=ueaBreak;
+    2: UnexpectedExceptionAction:=ueaBreakIfInRegion;
+  end;
+end;
+
 procedure TMemoryBrowser.pmStacktracePopup(Sender: TObject);
 var
   i: integer;
@@ -1219,6 +1266,27 @@ begin
   end;
 end;
 
+procedure TMemoryBrowser.miBreakOnExceptionsClick(Sender: TObject);
+var n: TNotifyEvent;
+begin
+  miExceptionRegionSeperator.Visible:=UnexpectedExceptionAction=ueaBreakIfInRegion;
+  miExceptionRegionAutoAddAllocs.Visible:=UnexpectedExceptionAction=ueaBreakIfInRegion;
+  miExceptionRegionManageList.Visible:=UnexpectedExceptionAction=ueaBreakIfInRegion;
+  miExceptionIgnoreList.visible:=UnexpectedExceptionAction in [ueaBreak, ueaBreakIfInRegion];
+  miExceptionRegionManageList.visible:=miExceptionIgnoreList.visible;
+
+  n:=miExceptionRegionAutoAddAllocs.OnClick;
+  miExceptionRegionAutoAddAllocs.OnClick:=nil;
+  miExceptionRegionAutoAddAllocs.checked:=allocsAddToUnexpectedExceptionList;
+  miExceptionRegionAutoAddAllocs.OnClick:=n;
+
+  miUnexpectedExceptionBreakNever.checked:=UnexpectedExceptionAction=ueaIgnore;
+  miUnexpectedExceptionBreakAlways.checked:=UnexpectedExceptionAction=ueaBreak;
+  miUnexpectedExceptionBreakIfInRegion.checked:=UnexpectedExceptionAction=ueaBreakIfInRegion;
+
+
+end;
+
 procedure TMemoryBrowser.miChangeProtectionClick(Sender: TObject);
 var
   protection: dword;
@@ -1235,6 +1303,36 @@ begin
   end;
 
   VirtualProtectEx(processhandle, pointer(hexview.Address),1,protection, oldprotect);
+end;
+
+procedure TMemoryBrowser.miExceptionIgnoreListClick(Sender: TObject);
+begin
+  if frmExceptionIgnoreList=nil then
+    frmExceptionIgnoreList:=tfrmExceptionIgnoreList.Create(self);
+
+  frmExceptionIgnoreList.show;
+end;
+
+procedure TMemoryBrowser.miExceptionRegionAutoAddAllocsClick(Sender: TObject);
+var n: TNotifyEvent;
+begin
+  if frmExceptionRegionList<>nil then
+  begin
+    n:=frmExceptionRegionList.cbAutoAddAllocs.OnChange;
+    frmExceptionRegionList.cbAutoAddAllocs.OnChange:=nil;
+    frmExceptionRegionList.cbAutoAddAllocs.Checked:=miExceptionRegionAutoAddAllocs.checked;
+    frmExceptionRegionList.cbAutoAddAllocs.OnChange:=n;
+  end;
+
+  allocsAddToUnexpectedExceptionList:=miExceptionRegionAutoAddAllocs.checked;
+end;
+
+procedure TMemoryBrowser.miExceptionRegionManageListClick(Sender: TObject);
+begin
+  if frmExceptionRegionList=nil then
+    frmExceptionRegionList:=tfrmExceptionRegionList.Create(self);
+
+  frmExceptionRegionList.show;
 end;
 
 procedure TMemoryBrowser.miHVBackClick(Sender: TObject);
@@ -1303,6 +1401,11 @@ end;
 procedure TMemoryBrowser.FormActivate(Sender: TObject);
 begin
   disassemblerview.LastFormActiveEvent:=getTickCount64;
+end;
+
+procedure TMemoryBrowser.Debug1Click(Sender: TObject);
+begin
+
 end;
 
 procedure TMemoryBrowser.miTextEncodingClick(Sender: TObject);
@@ -2184,7 +2287,7 @@ var codelength: dword;
     bla:string;
     i,j: integer;
     nops: array of byte;
-    a: ptrUint;
+    a,a2: ptrUint;
     original: dword;
 
     mbi : _MEMORY_BASIC_INFORMATION;
@@ -2194,7 +2297,9 @@ begin
 
   for i:=0 to AdvancedOptions.numberofcodes-1 do
   begin
-    if InRangeX(disassemblerview.SelectedAddress, AdvancedOptions.code[i].Address, AdvancedOptions.code[i].Address+length(AdvancedOptions.code[i].actualopcode)-1 ) then
+    a2:=symhandler.getAddressFromName(AdvancedOptions.code[i].symbolname);
+
+    if InRangeX(disassemblerview.SelectedAddress, a2, a2+length(AdvancedOptions.code[i].actualopcode)-1 ) then
     begin
       for j:=0 to AdvancedOptions.Codelist2.Items.count-1 do
         AdvancedOptions.Codelist2.Items[j].Selected:=false;
@@ -2499,13 +2604,12 @@ end;
 
 procedure TMemoryBrowser.miDebugRunClick(Sender: TObject);
 begin
+  if miDebugRun.Enabled then
   begin
     if debuggerthread<>nil then
       debuggerthread.ContinueDebugging(co_run);
 
-
     caption:=rsMemoryViewerRunning;
-
 
     reloadstacktrace;
   end;
@@ -2587,12 +2691,17 @@ var assemblercode,desc: string;
 
     gnascript: tstringlist;
     vpe: boolean;
+
+    address: ptruint;
 begin
 
   //make sure it doesnt have a breakpoint
+  address:=disassemblerview.SelectedAddress;
+
+
   if debuggerthread<>nil then
   begin
-    if debuggerthread.isBreakpoint(disassemblerview.SelectedAddress)<>nil then
+    if debuggerthread.isBreakpoint(Address)<>nil then
     begin
       beep; //Best sound effect cheat engine has
       exit;
@@ -2600,7 +2709,7 @@ begin
   end;
 
 
-  originalsize:=disassemblerview.SelectedAddress;
+  originalsize:=Address;
 
   localdisassembler:=TDisassembler.Create;
   try
@@ -2610,14 +2719,14 @@ begin
     localdisassembler.free;
   end;
 
-  dec(originalsize,disassemblerview.SelectedAddress);
+  dec(originalsize,Address);
 
 
   if x<>'' then assemblercode:=x;
 
 //  copy
 
-  assemblercode:=InputboxTop(rsCheatEngineSingleLingeAssembler, Format(rsTypeYourAssemblerCodeHereAddress, [inttohex(disassemblerview.SelectedAddress, 8)]), assemblercode, x='', canceled, assemblerHistory);
+  assemblercode:=InputboxTop(rsCheatEngineSingleLingeAssembler, Format(rsTypeYourAssemblerCodeHereAddress, [inttohex(Address, 8)]), assemblercode, x='', canceled, assemblerHistory);
   if not canceled then
   begin
 
@@ -2626,7 +2735,7 @@ begin
       //use the gnuassembler for this
       gnascript:=TStringList.create;
       try
-        gnascript.add('.msection sline 0x'+inttohex(disassemblerview.SelectedAddress,8));
+        gnascript.add('.msection sline 0x'+inttohex(Address,8));
         gnascript.Add(assemblercode);
         gnuassemble(gnascript);
       finally
@@ -2637,7 +2746,7 @@ begin
     end;
 
     try
-      if Assemble(assemblercode,disassemblerview.SelectedAddress,bytes) then
+      if Assemble(assemblercode,Address,bytes) then
       begin
         if originalsize<>length(bytes) then
         begin
@@ -2658,12 +2767,12 @@ begin
                 bytes[length(bytes)-1]:=$90;
               end;
 
-              a:=disassemblerview.SelectedAddress+length(bytes);
+              a:=Address+length(bytes);
 
-              b:=disassemblerview.SelectedAddress;
+              b:=Address;
               while b<a do disassemble(b,desc);
 
-              a:=b-disassemblerview.SelectedAddress;
+              a:=b-Address;
               while length(bytes)<a do
               begin
                 setlength(bytes,length(bytes)+1);
@@ -2683,10 +2792,10 @@ begin
 
         bytelength:=length(bytes);
 
-        vpe:=(SkipVirtualProtectEx=false) and VirtualProtectEx(processhandle,  pointer(disassemblerview.SelectedAddress),bytelength,PAGE_EXECUTE_READWRITE,p);
-        WriteProcessMemoryWithCloakSupport(processhandle,pointer(disassemblerview.SelectedAddress),@bytes[0],bytelength,a);
+        vpe:=(SkipVirtualProtectEx=false) and VirtualProtectEx(processhandle,  pointer(Address),bytelength,PAGE_EXECUTE_READWRITE,p);
+        WriteProcessMemoryWithCloakSupport(processhandle,pointer(Address),@bytes[0],bytelength,a);
         if vpe then
-          VirtualProtectEx(processhandle,pointer(disassemblerview.SelectedAddress),bytelength,p,p);
+          VirtualProtectEx(processhandle,pointer(Address),bytelength,p,p);
 
         hexview.update;
         disassemblerview.Update;
@@ -3012,6 +3121,9 @@ begin
     baseaddress:=VirtualAllocEx(processhandle,nil,memsize,MEM_COMMIT or MEM_RESERVE,PAGE_EXECUTE_READWRITE);
     if baseaddress=nil then
       raise exception.Create(rsErrorAllocatingMemory);
+
+    if allocsAddToUnexpectedExceptionList then
+      AddUnexpectedExceptionRegion(ptruint(baseaddress),memsize);
 
     if (disassemblerview.SelectedAddress<>0) and (memsize>7) and (messagedlg(Format(rsAtLeastBytesHaveBeenAllocatedAtDoYouWantToGoThereN, [IntToStr(memsize), IntToHex(ptrUint(baseaddress), 8), #13
       +#10]), mtConfirmation, [mbyes, mbno], 0)=mryes) then
@@ -3526,7 +3638,7 @@ end;
 procedure TMemoryBrowser.debuggerpopupPopup(Sender: TObject);
 var x: ptrUint;
   i: integer;
-
+  a: ptruint;
   inadvancedoptions: boolean;
 begin
   Breakandtraceinstructions1.Enabled:=processhandle<>0;
@@ -3548,7 +3660,8 @@ begin
 
   for i:=0 to AdvancedOptions.numberofcodes-1 do
   begin
-    if InRangeX(disassemblerview.SelectedAddress, AdvancedOptions.code[i].Address, AdvancedOptions.code[i].Address+length(AdvancedOptions.code[i].actualopcode)-1 ) then
+    a:=symhandler.getAddressFromName(AdvancedOptions.code[i].symbolname);
+    if InRangeX(disassemblerview.SelectedAddress, a, a+length(AdvancedOptions.code[i].actualopcode)-1 ) then
     begin
       inadvancedoptions:=true;
 
@@ -3586,6 +3699,8 @@ var
   h0,h1,h2,h3: integer;
   params: array of integer;
 
+  reg: TRegistry;
+
 begin
   MemoryBrowsers.Remove(self);
 
@@ -3621,6 +3736,7 @@ begin
       params[9]:=self.hexview.LockedRowSize;
 
       saveformposition(self,params);
+
 
 
     end;
@@ -4402,7 +4518,7 @@ begin
     result:=0;
 end;
 
-procedure TMemoryBrowser.UpdateDebugContext(threadhandle: THandle; threadid: dword; changeselection: boolean=true);
+procedure TMemoryBrowser.UpdateDebugContext(threadhandle: THandle; threadid: dword; changeselection: boolean=true; _debuggerthread: TDebuggerThread=nil);
 var temp: string='';
     temp2: string;
     Regstart: string='';
@@ -4418,6 +4534,8 @@ var temp: string='';
     params: string;
     accessedreglist: tstringlist=nil;
 begin
+  if _debuggerthread<>nil then debuggerthread.execlocation:=41301;
+
   if processhandler.SystemArchitecture=archX86 then
   begin
     a:=lastdebugcontext.{$ifdef cpu64}Rip{$else}Eip{$endif};
@@ -4433,6 +4551,11 @@ begin
     d.free;
     d:=nil;
   end;
+
+  if frmThreadlist<>nil then
+    frmThreadlist.FillThreadlist;
+
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41302;
 
 
   if processhandler.is64Bit or (processhandler.SystemArchitecture=archArm) then
@@ -4549,6 +4672,9 @@ begin
 
   end;
 
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41303;
+
+
   if r8label<>nil then r8label.visible:=processhandler.is64Bit or (processhandler.SystemArchitecture=archArm);
   if r9label<>nil then r9label.visible:=processhandler.is64Bit or (processhandler.SystemArchitecture=archArm);
   if r10label<>nil then r10label.visible:=processhandler.is64Bit or (processhandler.SystemArchitecture=archArm);
@@ -4582,7 +4708,21 @@ begin
     end;
   end;
 
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41304;
+
   miDebugRun.Enabled:=true;
+
+  if debuggerthread.CurrentThread=nil then
+  begin
+    showmessage('shit happened');
+
+    beep;
+  end;
+
+  miRunUnhandled.Enabled:=(debuggerthread.CurrentThread<>nil) and debuggerthread.CurrentThread.isUnhandledException;
+
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41305;
+  miRunUnhandled.Visible:=miRunUnhandled.Enabled;
   miDebugStep.Enabled:=true;
   miDebugStepOver.Enabled:=true;
   miDebugRunTill.Enabled:=true;
@@ -4590,8 +4730,14 @@ begin
   stacktrace1.Enabled:=true;
   miDebugExecuteTillReturn.Enabled:=true;
 
+
+
+
   if threadid<>0 then
     caption:=Format(rsMemoryViewerCurrentlyDebuggingThread, [inttohex(threadid, 1)]);
+
+  if (debuggerthread.CurrentThread<>nil) and debuggerthread.CurrentThread.isUnhandledException then
+    caption:=caption+' '+format(rsBecauseOfUnhandledExeption, [ExceptionCodeToString(debuggerthread.CurrentThread.lastUnhandledExceptionCode)]);
 
   if (frmstacktrace<>nil) then
   begin
@@ -4609,6 +4755,7 @@ begin
     if processhandler.SystemArchitecture=archArm then
       disassemblerview.SelectedAddress:=lastdebugcontextarm.PC;
   end;
+
 
 
 
@@ -4715,6 +4862,8 @@ begin
 
   end else eIPlabel.Font.Color:=clWindowText;
 
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41306;
+
   {$ifdef CPU64}
   if processhandler.is64Bit or (processhandler.SystemArchitecture=archArm)  then
   begin
@@ -4799,6 +4948,8 @@ begin
     end;
   end;
   {$endif}
+
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41307;
 
   if processhandler.SystemArchitecture=archX86 then
   begin
@@ -4929,7 +5080,7 @@ begin
   end;
 
 
-
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41308;
 
   sbShowFloats.BringToFront;
   //sbShowFloats.visible:=true;
@@ -4956,6 +5107,8 @@ begin
     scrollbox1.Invalidate;
   end;
 
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41309;
+
   if laststack=nil then
   begin
     getmem(laststack,stacktraceSize+64);
@@ -4976,7 +5129,11 @@ begin
     inc(i,bs);
   end;
 
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41310;
+
   reloadStacktrace;
+
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41311;
 
   if frmFloatingPointPanel<>nil then
     frmFloatingPointPanel.SetContextPointer(@lastdebugcontext);
@@ -4984,11 +5141,15 @@ begin
   if not memorybrowser.Visible then
     memorybrowser.show;
 
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41312;
+
   if (frmWatchlist<>nil) and (frmWatchlist.Visible) then
     frmWatchlist.UpdateContext(@lastdebugcontext);
 
   if accessedreglist<>nil then
     freeandnil(accessedreglist);
+
+  if _debuggerthread<>nil then _debuggerthread.execlocation:=41313;
 
   {for i:=0 to 4095 do
   begin
@@ -4999,6 +5160,8 @@ begin
     end;
   end; }
 end;
+
+
 
 initialization
   MemoryBrowsers:=TList.Create;

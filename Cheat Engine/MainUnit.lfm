@@ -1,17 +1,17 @@
 object MainForm: TMainForm
   Tag = 2
-  Left = 681
-  Height = 626
+  Left = 327
+  Height = 625
   Hint = ' '
-  Top = 316
+  Top = 128
   Width = 622
   HelpContext = 1
   HorzScrollBar.Visible = False
   VertScrollBar.Visible = False
   AllowDropFiles = True
   AutoSize = True
-  Caption = 'Cheat Engine 6.8'
-  ClientHeight = 606
+  Caption = 'Cheat Engine 6.8.2'
+  ClientHeight = 605
   ClientWidth = 622
   Menu = MainMenu1
   OnClose = FormClose
@@ -38,7 +38,7 @@ object MainForm: TMainForm
   object Panel1: TPanel
     Tag = 777
     Left = 0
-    Height = 126
+    Height = 125
     Top = 448
     Width = 622
     Align = alClient
@@ -52,7 +52,7 @@ object MainForm: TMainForm
   object Panel4: TPanel
     Left = 0
     Height = 32
-    Top = 574
+    Top = 573
     Width = 622
     Align = alBottom
     AutoSize = True
@@ -74,10 +74,10 @@ object MainForm: TMainForm
       ParentShowHint = False
     end
     object CommentButton: TSpeedButton
-      Left = 555
+      Left = 556
       Height = 30
       Top = 1
-      Width = 66
+      Width = 65
       Align = alRight
       AutoSize = True
       Caption = 'Table Extras'
@@ -159,7 +159,7 @@ object MainForm: TMainForm
       Left = 295
       Height = 15
       Top = 79
-      Width = 57
+      Width = 56
       BorderSpacing.Top = 8
       Caption = 'Scan Value'
       Enabled = False
@@ -170,10 +170,10 @@ object MainForm: TMainForm
       AnchorSideTop.Control = ScanType
       AnchorSideTop.Side = asrCenter
       AnchorSideRight.Control = ScanType
-      Left = 239
+      Left = 240
       Height = 15
       Top = 128
-      Width = 54
+      Width = 53
       Anchors = [akTop, akRight]
       BorderSpacing.Right = 2
       Caption = 'Scan Type'
@@ -184,10 +184,10 @@ object MainForm: TMainForm
       AnchorSideTop.Control = VarType
       AnchorSideTop.Side = asrCenter
       AnchorSideRight.Control = VarType
-      Left = 235
+      Left = 237
       Height = 15
       Top = 153
-      Width = 58
+      Width = 56
       Anchors = [akTop, akRight]
       BorderSpacing.Right = 2
       Caption = 'Value Type'
@@ -1442,6 +1442,7 @@ object MainForm: TMainForm
           Top = 19
           Width = 60
           Caption = 'Percent'
+          OnChange = cbPercentageOnChange
           TabOrder = 1
         end
         object cbNot: TCheckBox
@@ -1649,7 +1650,7 @@ object MainForm: TMainForm
       Left = 541
       Height = 15
       Top = 79
-      Width = 57
+      Width = 56
       Caption = 'Scan Value'
       Enabled = False
       ParentBidiMode = False

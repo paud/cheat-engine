@@ -98,10 +98,12 @@ uses
   autoassemblerexeptionhandler, frmstructurecompareunit, addressedit,
   frmChangedAddressesCommonalityScannerUnit, ceregistry, LuaRemoteThread,
   LuaManualModuleLoader, symbolhandlerstructs, frmOpenFileAsProcessDialogUnit,
-  BetterDLLSearchPath;
+  BetterDLLSearchPath, UnexpectedExceptionsHelper, frmExceptionRegionListUnit,
+  frmExceptionIgnoreListUnit, frmcodefilterunit, CodeFilterCallOrAllDialog,
+  frmBranchMapperUnit;
 
 {$R cheatengine.res}
-//{$R manifest.res}  //lazarus now has this build in
+{$R manifest.res}  //lazarus now has this build in (but sucks as it explicitly turns of dpi aware)
 //{$R Sounds.rc}
 //{$R images.rc}
 {$R images.res}
@@ -240,7 +242,7 @@ var
 
   path: string;
 begin
-  Application.Title:='Cheat Engine 6.8.1';
+  Application.Title:='Cheat Engine 6.8.2';
   Application.Initialize;
 
   overridefont:=nil;

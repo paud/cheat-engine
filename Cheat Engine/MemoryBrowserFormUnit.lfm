@@ -1,11 +1,11 @@
 object MemoryBrowser: TMemoryBrowser
   Left = 998
-  Height = 402
+  Height = 460
   Top = 320
   Width = 622
   HelpContext = 12
   Caption = 'Memory Viewer'
-  ClientHeight = 382
+  ClientHeight = 440
   ClientWidth = 622
   Menu = MainMenu1
   OnActivate = FormActivate
@@ -495,18 +495,18 @@ object MemoryBrowser: TMemoryBrowser
   end
   object Panel4: TPanel
     Left = 0
-    Height = 77
+    Height = 135
     Top = 305
     Width = 622
     Align = alClient
     BevelOuter = bvNone
     BorderWidth = 1
-    ClientHeight = 77
+    ClientHeight = 135
     ClientWidth = 622
     TabOrder = 1
     object Splitter3: TSplitter
       Left = 406
-      Height = 75
+      Height = 133
       Top = 1
       Width = 5
       Align = alRight
@@ -517,7 +517,7 @@ object MemoryBrowser: TMemoryBrowser
     end
     object Panel3: TPanel
       Left = 1
-      Height = 75
+      Height = 133
       Top = 1
       Width = 405
       Align = alClient
@@ -526,19 +526,19 @@ object MemoryBrowser: TMemoryBrowser
     end
     object pnlStacktrace: TPanel
       Left = 411
-      Height = 75
+      Height = 133
       Top = 1
       Width = 210
       Align = alRight
       BevelInner = bvLowered
-      ClientHeight = 75
+      ClientHeight = 133
       ClientWidth = 210
       PopupMenu = pmStacktrace
       TabOrder = 1
       Visible = False
       object lvStacktraceData: TListView
         Left = 2
-        Height = 71
+        Height = 129
         Hint = 'Shows the current stack.'#13#10'Tip: When doubleclicking the value and it represents an address, then you can hold shift to make it show in the disassembler, and ctrl to make it show in the memory view. Else Cheat Engine will guess it for you based on if it''s executable memory or not'
         Top = 2
         Width = 206
@@ -1330,11 +1330,17 @@ object MemoryBrowser: TMemoryBrowser
     end
     object Debug1: TMenuItem
       Caption = 'Debug'
+      OnClick = Debug1Click
       object miDebugRun: TMenuItem
         Caption = 'Run'
         Enabled = False
         ShortCut = 120
         OnClick = miDebugRunClick
+      end
+      object miRunUnhandled: TMenuItem
+        Caption = 'Run Unhandled'
+        Visible = False
+        OnClick = miRunUnhandledClick
       end
       object miDebugStep: TMenuItem
         Caption = 'Step'
@@ -1385,6 +1391,57 @@ object MemoryBrowser: TMemoryBrowser
       object miDebugBreak: TMenuItem
         Caption = 'Break'
         OnClick = miDebugBreakClick
+      end
+      object N19: TMenuItem
+        Caption = '-'
+      end
+      object miBreakOnExceptions: TMenuItem
+        Caption = 'Break on unexpected exceptions'
+        OnClick = miBreakOnExceptionsClick
+        object miUnexpectedExceptionBreakNever: TMenuItem
+          AutoCheck = True
+          Caption = 'Never'
+          Checked = True
+          GroupIndex = 4
+          RadioItem = True
+          OnClick = miUnexpectedExceptionBreakOptionClick
+        end
+        object miUnexpectedExceptionBreakAlways: TMenuItem
+          Tag = 1
+          AutoCheck = True
+          Caption = 'Always'
+          GroupIndex = 4
+          RadioItem = True
+          OnClick = miUnexpectedExceptionBreakOptionClick
+        end
+        object miUnexpectedExceptionBreakIfInRegion: TMenuItem
+          Tag = 2
+          AutoCheck = True
+          Caption = 'Only in specified regions'
+          GroupIndex = 4
+          RadioItem = True
+          OnClick = miUnexpectedExceptionBreakOptionClick
+        end
+        object miExceptionRegionSeperator: TMenuItem
+          Caption = '-'
+          Visible = False
+        end
+        object miExceptionRegionAutoAddAllocs: TMenuItem
+          AutoCheck = True
+          Caption = 'Automatically add allocated memory by CE as watched regions'
+          Visible = False
+          OnClick = miExceptionRegionAutoAddAllocsClick
+        end
+        object miExceptionRegionManageList: TMenuItem
+          Caption = 'Manage exception region list'
+          Visible = False
+          OnClick = miExceptionRegionManageListClick
+        end
+        object miExceptionIgnoreList: TMenuItem
+          Caption = 'Manage exception code filter'
+          Visible = False
+          OnClick = miExceptionIgnoreListClick
+        end
       end
     end
     object Extra1: TMenuItem
@@ -1455,15 +1512,20 @@ object MemoryBrowser: TMemoryBrowser
         ShortCut = 49232
         OnClick = miPointerSpiderClick
       end
-      object MenuItem14: TMenuItem
+      object miUltimap: TMenuItem
         Caption = 'Ultimap'
         ShortCut = 49237
-        OnClick = MenuItem14Click
+        OnClick = miUltimapClick
       end
-      object MenuItem26: TMenuItem
+      object miUltimap2: TMenuItem
         Caption = 'Ultimap 2'
         ShortCut = 24661
-        OnClick = MenuItem26Click
+        OnClick = miUltimap2Click
+      end
+      object miCodeFilter: TMenuItem
+        Caption = 'Code Filter'
+        ShortCut = 24646
+        OnClick = miCodeFilterClick
       end
       object MenuItem22: TMenuItem
         Caption = 'Watch memory page access'

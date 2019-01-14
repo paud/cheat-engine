@@ -815,7 +815,9 @@ begin
 end;
 
 procedure LUA_GetNewContextState(context: PContext; extraregs: boolean=false);
-var i: integer;
+var
+  i: integer;
+  t: integer;
 begin
   lua_getglobal(luavm, 'EFLAGS');
   context.EFLAGS:=lua_tointeger(luavm, -1);
@@ -941,10 +943,11 @@ begin
       lua_getglobal(luavm, pchar('FP'+inttostr(i)));
       if not lua_isnil(luavm, -1) then
       begin
+        t:=lua_gettop(LuaVM);
         {$ifdef cpu32}
-        readBytesFromTable(luavm, -1, @context.FloatSave.RegisterArea[10*i], 10);
+        readBytesFromTable(luavm, t, @context.FloatSave.RegisterArea[10*i], 10);
         {$else}
-        readBytesFromTable(luavm, -1, @context.FltSave.FloatRegisters[i], 10);
+        readBytesFromTable(luavm, t, @context.FltSave.FloatRegisters[i], 10);
         {$endif}
       end;
       lua_pop(luavm,1);
@@ -957,10 +960,11 @@ begin
       lua_getglobal(luavm, pchar('XMM'+inttostr(i)));
       if not lua_isnil(luavm, -1) then
       begin
+        t:=lua_gettop(LuaVM);
         {$ifdef cpu32}
-        readBytesFromTable(luavm, -1, @context.ext.XMMRegisters.LegacyXMM[i], 16);
+        readBytesFromTable(luavm, t, @context.ext.XMMRegisters.LegacyXMM[i], 16);
         {$else}
-        readBytesFromTable(luavm, -1, @context.FltSave.XmmRegisters[i], 16);
+        readBytesFromTable(luavm, t, @context.FltSave.XmmRegisters[i], 16);
         {$endif}
       end;
 
@@ -6839,6 +6843,7 @@ var
   filename: string;
   parameters: integer;
   protect: boolean;
+  dontDeactivateDesignerForms: boolean;
 begin
   result:=0;
 
@@ -6851,7 +6856,12 @@ begin
     else
       protect:=false;
 
-    savetable(filename, protect);
+    if parameters>=3 then
+      dontDeactivateDesignerForms:=lua_toboolean(L,3)
+    else
+      dontDeactivateDesignerForms:=true;
+
+    savetable(filename, protect, dontDeactivateDesignerForms);
   end;
 
   lua_pop(L, lua_gettop(L));
@@ -8317,7 +8327,7 @@ begin
     for i:=0 to floatvalues.count-1 do
       s.add(floatvalues[i]);
 
-    Clipboard.AsText:=s.text;
+    //Clipboard.AsText:=s.text;
     dontfree:=false;
 
     if autoassemble(s,false,true,false,false,allocs,exceptionlist) then

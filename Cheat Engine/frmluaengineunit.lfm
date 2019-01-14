@@ -1218,7 +1218,7 @@ object frmLuaEngine: TfrmLuaEngine
     OnCodeCompletion = scLuaCompleterCodeCompletion
     ExecCommandID = ecSynCompletionExecute
     Editor = mScript
-    left = 408
+    left = 416
     top = 184
   end
 end
